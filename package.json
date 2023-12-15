@@ -1,0 +1,28 @@
+{
+  "name": "@unipass-wallet/openid-account",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "keywords": [],
+  "author": "lx",
+  "license": "ISC",
+  "devDependencies": {
+    "@swc/core": "^1.3.100",
+    "@types/node-rsa": "^1.1.4",
+    "jose": "^5.1.3",
+    "node-rsa": "^1.1.1",
+    "tsup": "^8.0.1",
+    "typescript": "~4.9.0"
+  },
+  "dependencies": {
+    "@account-abstraction/contracts": "^0.6.0",
+    "@account-abstraction/sdk": "0.6",
+    "base64url": "^3.0.1",
+    "ethers": "^5.7.1"
+  }
+}
