@@ -55,8 +55,39 @@ export class OpenIDAccount extends BaseAccountAPI {
     this.audiences = params.audiences;
     this.key_ids = params.key_ids;
     this.keys = params.keys;
-    this.accountAddress = params.accountAddress;
     this.isDeployed = params.isDeployed;
+
+    this.accountAddress = params.accountAddress;
+  }
+
+  async initialize() {
+    if (this.accountAddress != undefined) {
+      return;
+    }
+    const factory = new Contract(
+      this.factoryAddress,
+      OpenIDAccountFactoryABI.abi,
+      this.provider
+    );
+    const accountAddress = await factory.getAddress(
+      0,
+      this.owner,
+      this.openid_key,
+      this.audiences,
+      this.key_ids,
+      this.keys
+    );
+    this.accountAddress = accountAddress;
+
+    const deployed = await isContractDeployed(
+      this.accountAddress!,
+      this.provider
+    );
+
+    if (deployed) {
+      console.log("contract deployed");
+      this.isDeployed = deployed;
+    }
   }
 
   async getAccountInitCode(): Promise<string> {
@@ -80,17 +111,16 @@ export class OpenIDAccount extends BaseAccountAPI {
         this.keys
       );
       this.accountAddress = accountAddress;
-    } else {
-      const deployed = await isContractDeployed(
-        this.accountAddress,
-        this.provider
-      );
+    }
+    const deployed = await isContractDeployed(
+      this.accountAddress!,
+      this.provider
+    );
 
-      if (deployed) {
-        this.isDeployed = deployed;
+    if (deployed) {
+      this.isDeployed = deployed;
 
-        return "0x";
-      }
+      return "0x";
     }
 
     const calldata = factory.interface.encodeFunctionData(
@@ -104,6 +134,8 @@ export class OpenIDAccount extends BaseAccountAPI {
         this.keys!,
       ]
     );
+    console.log(`isDeployed: ${deployed}`);
+    console.log(`callData: ${calldata}`);
 
     return solidityPack(["address", "bytes"], [this.factoryAddress, calldata]);
   }
@@ -136,8 +168,8 @@ export class OpenIDAccount extends BaseAccountAPI {
    * NOTE: createUnsignedUserOp will add to this value the cost of creation, if the contract is not yet created.
    */
   override async getVerificationGasLimit() {
-    console.log("getVerificationGasLimit");
-    return Promise.resolve(1500000);
+    console.log("getVerificationGasLimit", 620000);
+    return Promise.resolve(620000);
   }
 
   async encodeExecute(
@@ -196,15 +228,6 @@ export class OpenIDAccount extends BaseAccountAPI {
       value,
       nonce,
     });
-  }
-
-  async calcGasCost(userOp: UserOperationStruct): Promise<BigNumber> {
-    const gasPrice = BigNumber.from(await userOp.maxFeePerGas);
-    const gasUsed = BigNumber.from(await userOp.preVerificationGas)
-      .add(BigNumber.from(await userOp.verificationGasLimit))
-      .add(BigNumber.from(await userOp.callGasLimit));
-
-    return gasPrice.mul(gasUsed);
   }
 
   public generateSignature(idToken: string): string {
